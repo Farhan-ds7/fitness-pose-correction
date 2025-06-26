@@ -9,8 +9,9 @@ while True:
     img = detector.findPose(img)
     lmList = detector.getLandmarkPositions(img)
 
-    if lmList:
-        print(lmList[11])  # Left shoulder
+    if len(lmList)!=0:
+        angle=detector.findAngle(img,lmList[11],lmList[13],lmList[15])
+        print("Elbow Angle:", angle)
 
     cv2.imshow("Pose Detection", img)
     if cv2.waitKey(1) & 0xFF == ord('q'):
