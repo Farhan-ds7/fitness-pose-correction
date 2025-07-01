@@ -49,29 +49,37 @@ class PoseDetector:
         cv2.line(img,(x3,y3),(x2,y2),(255, 255, 255), 2)
         cv2.putText(img,f'{int(angle)}',(x2 - 50, y2 + 40),
                         cv2.FONT_HERSHEY_PLAIN,2,(0, 255, 0), 2)
-
         return angle
     
     def countBicepCurls(self,img,lmList):
-        if len(lmList)!=0:
-# right hand
-            angle_right=self.findAngle(img, lmList[12], lmList[14], lmList[16])
-            if angle_right>160:
-                if self.dir_right==1:
-                    self.count_right+=1
-                    self.dir_right=0
-            if angle_right<50:
-                if self.dir_right==0:
-                    self.dir_right=1
-# left hand
-            angle_left=self.findAngle(img,lmList[11],lmList[13],lmList[15])
-            if angle_left>160:
-                if self.dir_left==1:
-                    self.count_left+=1
-                    self.dir_left=0
-            if angle_left<50:
-                if self.dir_left==0:
-                   self.dir_left=1
-            cv2.putText(img,f'Right Reps:{self.count_right}',(20,50),cv2.FONT_HERSHEY_PLAIN,3,(255,0,0),3)
-            cv2.putText(img,f'Left Reps:{self.count_left}',(20,90),cv2.FONT_HERSHEY_PLAIN,3,(255,0,0),3)
+        if not lmList or len(lmList)<17:
+            return img
+        
+        right_shoulder_y=lmList[12][2]
+        left_shoulder_y=lmList[11][2]
+        shoulder_diff=abs(right_shoulder_y-left_shoulder_y)
+        shoulders_straight= shoulder_diff < 30
+        cv2.putText(img, f'Right Reps: {self.count_right}', (20, 50),cv2.FONT_HERSHEY_PLAIN, 3, (255, 0, 0), 3)
+        cv2.putText(img, f'Left Reps: {self.count_left}', (20, 90),cv2.FONT_HERSHEY_PLAIN, 3, (255, 0, 0), 3)
+        if not shoulders_straight:
+                cv2.putText(img, "Keep Shoulders Straight!!", (20, 130),cv2.FONT_HERSHEY_PLAIN, 3, (0, 0, 255), 3)
+                return img
+        
+        angle_right = self.findAngle(img, lmList[12], lmList[14], lmList[16])        
+        if angle_right>160:
+            if self.dir_right==1:
+                self.count_right+=1
+                self.dir_right=0
+        elif angle_right<50:
+            if self.dir_right==0:
+                self.dir_right=1
+
+        angle_left = self.findAngle(img, lmList[11], lmList[13], lmList[15])
+        if angle_left>160:
+            if self.dir_left==1:
+                self.count_left+=1
+                self.dir_left=0
+        elif angle_left<50:
+            if self.dir_left==0:
+                self.dir_left=1
         return img
