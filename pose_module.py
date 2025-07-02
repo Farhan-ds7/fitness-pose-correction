@@ -2,6 +2,16 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import math
+import pyttsx3
+
+engine=pyttsx3.init()
+voices=engine.getProperty('voices')
+for voice in voices:
+    if "Albert" in voice.name.lower():
+        engine.setProperty('voice',voice.id)
+        break
+engine.setProperty('rate',150)
+engine.setProperty('volume',1.0)
 
 class PoseDetector:
     def __init__(self):
@@ -13,7 +23,11 @@ class PoseDetector:
         self.dir_right=0
         self.count_left=0
         self.dir_left=0
-
+        
+    def speak(self,text):
+        engine.say(text)
+        engine.runAndWait()
+        
     def findPose(self, img, draw=True):
         imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         self.results = self.pose.process(imgRGB)
@@ -73,6 +87,7 @@ class PoseDetector:
             if self.dir_right==1:
                 self.count_right+=1
                 self.dir_right=0
+                self.speak(f"Right rep {self.count_right}")
         elif angle_right<50:
             if self.dir_right==0:
                 self.dir_right=1
@@ -82,6 +97,7 @@ class PoseDetector:
             if self.dir_left==1:
                 self.count_left+=1
                 self.dir_left=0
+                self.speak(f"Left rep {self.count_left}")
         elif angle_left<50:
             if self.dir_left==0:
                 self.dir_left=1
