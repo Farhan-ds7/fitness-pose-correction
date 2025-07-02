@@ -52,7 +52,7 @@ class PoseDetector:
         return angle
     
     def countBicepCurls(self,img,lmList):
-        if not lmList or len(lmList)<2:
+        if not lmList or len(lmList)<25:
             return img
         
         left_shoulder_angle=self.findAngle(img,lmList[13],lmList[11],lmList[23],draw=True)  # Elbow-Shoulder-Hip
