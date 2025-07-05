@@ -32,9 +32,9 @@ class PoseDetector:
         imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         self.results = self.pose.process(imgRGB)
         if self.results.pose_landmarks and draw:
-            landmark_style = self.mpDraw.DrawingSpec(color=(245, 117, 66), thickness=2, circle_radius=4)
-            connection_style = self.mpDraw.DrawingSpec(color=(245, 66, 230), thickness=2, circle_radius=2)
-            self.mpDraw.draw_landmarks(img, self.results.pose_landmarks, self.mpPose.POSE_CONNECTIONS,landmark_drawing_spec=landmark_style,connection_drawing_spec=connection_style)
+            landmark_style=self.mpDraw.DrawingSpec(color=(245,117,66),thickness=2,circle_radius=4)
+            connection_style=self.mpDraw.DrawingSpec(color=(245,66,230),thickness=2,circle_radius=2)
+            self.mpDraw.draw_landmarks(img,self.results.pose_landmarks,self.mpPose.POSE_CONNECTIONS,landmark_drawing_spec=landmark_style,connection_drawing_spec=connection_style)
         return img
 
     def getLandmarkPositions(self,img):
@@ -74,13 +74,23 @@ class PoseDetector:
         right_shoulder_angle=self.findAngle(img,lmList[14],lmList[12],lmList[24],draw=True)  # Elbow-Shoulder-Hip
         shoulders_straight=(0<=left_shoulder_angle<=25)and(0<=right_shoulder_angle<=25)
 
+        left_hip_y=lmList[23][2]
+        right_hip_y=lmList[24][2]
+        hip_diff=abs(left_hip_y-right_hip_y)
+        hip_stable=hip_diff<30
+
         cv2.putText(img,f'Right Reps:{self.count_right}',(20,50),
                 cv2.FONT_HERSHEY_PLAIN,3,(255,0,0),3)
         cv2.putText(img,f'Left Reps:{self.count_left}',(20,90),
                 cv2.FONT_HERSHEY_PLAIN,3,(255,0,0),3)
 
-        if not shoulders_straight:
-                cv2.putText(img, "Keep Shoulders Straight!!", (20, 130),cv2.FONT_HERSHEY_PLAIN, 3, (0, 0, 255), 3)
+        if not shoulders_straight or not hip_stable:
+                warning_text=""
+                if not shoulders_straight:
+                    warning_text+="Fix Shoulder"
+                if not hip_stable:
+                    warning_text+="Fix hip"
+                cv2.putText(img,warning_text.strip(), (20, 130),cv2.FONT_HERSHEY_PLAIN, 3, (0, 0, 255), 3)
                 return img
         
         angle_right = self.findAngle(img,lmList[12],lmList[14],lmList[16])        
