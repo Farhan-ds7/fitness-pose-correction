@@ -14,7 +14,7 @@ engine.setProperty('rate',150)
 engine.setProperty('volume',1.0)
 
 class PoseDetector:
-    def __init__(self):
+    def __init__(self,min_detection_confidence=0.7,min_tracking_confidence=0.6):
         self.mpDraw=mp.solutions.drawing_utils
         self.mpPose=mp.solutions.pose
         self.pose=self.mpPose.Pose()
@@ -32,8 +32,9 @@ class PoseDetector:
         imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         self.results = self.pose.process(imgRGB)
         if self.results.pose_landmarks and draw:
-            self.mpDraw.draw_landmarks(
-                img, self.results.pose_landmarks, self.mpPose.POSE_CONNECTIONS)
+            landmark_style = self.mpDraw.DrawingSpec(color=(245, 117, 66), thickness=2, circle_radius=4)
+            connection_style = self.mpDraw.DrawingSpec(color=(245, 66, 230), thickness=2, circle_radius=2)
+            self.mpDraw.draw_landmarks(img, self.results.pose_landmarks, self.mpPose.POSE_CONNECTIONS,landmark_drawing_spec=landmark_style,connection_drawing_spec=connection_style)
         return img
 
     def getLandmarkPositions(self,img):

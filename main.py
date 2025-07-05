@@ -2,7 +2,7 @@ import cv2
 from pose_module import PoseDetector
 
 cap=cv2.VideoCapture(0)
-detector=PoseDetector()
+detector=PoseDetector(min_detection_confidence=0.7,min_tracking_confidence=0.6)
 while True:
     success, img = cap.read()
     img=detector.findPose(img)
