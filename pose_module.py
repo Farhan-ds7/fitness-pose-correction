@@ -23,6 +23,9 @@ class PoseDetector:
         self.dir_right=0
         self.count_left=0
         self.dir_left=0
+
+        self.squat_count=0
+        self.squat_dir=0
         
     def speak(self,text):
         engine.say(text)
@@ -113,3 +116,22 @@ class PoseDetector:
             if self.dir_left==0:
                 self.dir_left=1
         return img
+    
+    def countSquats(self,img,lmList):
+        if not lmList or len(lmList)<29:
+            # Right leg: Hip (24), Knee (26), Ankle (28)
+            angle=self.findAngle(img,lmList[24],lmList[26],lmList[28])
+
+            if angle<70:
+                if self.squat_dir==0:
+                    self.squat_dir=1
+            elif angle>160:
+                if self.squat_dir==1:
+                    self.squat_count+=1
+                    self.squat_dir=0
+                    self.speak(f"Squat rep{self.squat_count}")
+            cv2.putText(img, f'Squats:{self.squat_count}',(20,130),
+                        cv2.FONT_HERSHEY_PLAIN,3,(0,255,255),3)
+        return img
+
+
