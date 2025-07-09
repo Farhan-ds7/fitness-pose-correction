@@ -117,21 +117,69 @@ class PoseDetector:
                 self.dir_left=1
         return img
     
-    def countSquats(self,img,lmList):
-        if not lmList or len(lmList)<29:
-            # Right leg: Hip (24), Knee (26), Ankle (28)
-            angle=self.findAngle(img,lmList[24],lmList[26],lmList[28])
+    def countSquats(self, img, lmList):
+        if not lmList or len(lmList) <33:
+            return img
 
-            if angle<70:
-                if self.squat_dir==0:
-                    self.squat_dir=1
-            elif angle>160:
-                if self.squat_dir==1:
-                    self.squat_count+=1
-                    self.squat_dir=0
-                    self.speak(f"Squat rep{self.squat_count}")
-            cv2.putText(img, f'Squats:{self.squat_count}',(20,130),
-                        cv2.FONT_HERSHEY_PLAIN,3,(0,255,255),3)
+    # Right leg landmarks
+        right_hip=lmList[24]
+        right_knee=lmList[26]
+        right_ankle=lmList[28]
+        right_foot=lmList[32]  
+
+    # Left leg landmarks
+        left_hip=lmList[23]
+        left_knee=lmList[25]
+        left_ankle=lmList[27]
+        left_foot=lmList[31] 
+
+    # Torso angles
+        torso_angle_right=self.findAngle(img, lmList[12],right_hip,right_knee,draw=False)
+        torso_angle_left=self.findAngle(img, lmList[11],left_hip,left_knee,draw=False)
+
+    # Knee angles
+        knee_angle_right=self.findAngle(img,right_hip,right_knee,right_ankle)
+        knee_angle_left=self.findAngle(img,left_hip,left_knee,left_ankle)
+
+    # Toe crossing check
+        right_knee_x,right_toe_x=right_knee[1],right_foot[1]
+        left_knee_x,left_toe_x=left_knee[1],left_foot[1]
+        right_knee_ok=right_knee_x<right_toe_x
+        left_knee_ok=left_knee_x<left_toe_x
+
+    # Form validation
+        form_ok =(
+            80 <= knee_angle_right <= 100 and
+            80 <= knee_angle_left <= 100 and
+            torso_angle_right < 120 and
+            torso_angle_left < 120 and
+            right_knee_ok and left_knee_ok
+        )
+        if form_ok:
+            # Squat direction logic
+            if knee_angle_right<100 and knee_angle_left<100:
+                if self.squat_dir == 0:
+                    self.squat_dir = 1
+            elif knee_angle_right>160 and knee_angle_left>160:
+                if self.squat_dir == 1:
+                    self.squat_count += 1
+                    self.squat_dir = 0
+                    self.speak(f"Squat rep {self.squat_count}")
+        else:
+            warning = "Fix Form:"
+            if not(80<= knee_angle_right<=100 and 80<=knee_angle_left<=100):
+                warning+=" Bend knees 90°"
+            if torso_angle_right>=120 or torso_angle_left >= 120:
+                warning+="Lean back"
+            if not (right_knee_ok and left_knee_ok):
+                warning +="Knees behind toes"
+
+            cv2.putText(img, warning.strip(),(20, 170),
+                    cv2.FONT_HERSHEY_PLAIN,3,(0, 0, 255),3)
+        cv2.putText(img,f'Squats:{self.squat_count}',(20,50),
+                        cv2.FONT_HERSHEY_PLAIN,3,(255,0,0),3)  # Black color
+
         return img
+
 
 
