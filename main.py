@@ -28,5 +28,7 @@ while True:
         current_mode="biceps"
     elif key==ord('s'):
         current_mode="squat"
+        detector.squat_count = 0
+        detector.squat_dir = 0
 video.release()
 cv2.destroyAllWindows()
