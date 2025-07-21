@@ -117,35 +117,48 @@ class PoseDetector:
                 self.dir_left=1
         return img
 
-    def countSquats(self, img, lmList):
-        if not lmList or len(lmList) < 33:
+    def countSquats(self,img,lmList):
+        if not lmList or len(lmList)<33:
             return img
-        right_shoulder = lmList[12]
-        right_hip = lmList[24]
-        right_knee = lmList[26]
-        right_ankle = lmList[28]
+        right_shoulder=lmList[12]
+        right_hip=lmList[24]
+        right_knee=lmList[26]
+        right_ankle=lmList[28]
+        right_foot=lmList[32]
 
-        left_shoulder = lmList[11]
-        left_hip = lmList[23]
-        left_knee = lmList[25]
-        left_ankle = lmList[27]
 
-        knee_angle_right = self.findAngle(img, right_hip, right_knee, right_ankle)
-        knee_angle_left = self.findAngle(img, left_hip, left_knee, left_ankle)
+        left_shoulder=lmList[11]
+        left_hip=lmList[23]
+        left_knee=lmList[25]
+        left_ankle=lmList[27]
+        left_foot=lmList[31]
 
-        hip_angle_right = self.findAngle(img, right_shoulder, right_hip, right_knee)
-        hip_angle_left = self.findAngle(img, left_shoulder, left_hip, left_knee)
 
-        cv2.putText(img, f'KneeR: {int(knee_angle_right)}', (20, 100),
+        knee_angle_right=self.findAngle(img,right_hip,right_knee,right_ankle)
+        knee_angle_left=self.findAngle(img,left_hip,left_knee,left_ankle)
+
+        hip_angle_right=self.findAngle(img,right_shoulder,right_hip,right_knee)
+        hip_angle_left=self.findAngle(img,left_shoulder,left_hip,left_knee)
+
+        torso_angle_right=self.findAngle(img,right_shoulder,right_hip,right_knee,draw=False)
+        torso_angle_left=self.findAngle(img,left_shoulder,left_hip,left_knee,draw=False)
+
+        right_knee_ok = right_knee[1]<right_foot[1]
+        left_knee_ok = left_knee[1]<left_foot[1]
+
+        cv2.putText(img, f'KneeR: {int(knee_angle_right)}',(20,100),
                 cv2.FONT_HERSHEY_PLAIN, 2, (0,255,0), 2)
-        cv2.putText(img, f'KneeL: {int(knee_angle_left)}', (20, 130),
+        cv2.putText(img, f'KneeL: {int(knee_angle_left)}',(20,130),
                 cv2.FONT_HERSHEY_PLAIN, 2, (0,255,0), 2)
-        cv2.putText(img, f'HipR: {int(hip_angle_right)}', (20, 160),
+        cv2.putText(img, f'HipR: {int(hip_angle_right)}',(20,160),
                 cv2.FONT_HERSHEY_PLAIN, 2, (0,255,0), 2)
-        cv2.putText(img, f'HipL: {int(hip_angle_left)}', (20, 190),
+        cv2.putText(img, f'HipL: {int(hip_angle_left)}', (20,190),
                 cv2.FONT_HERSHEY_PLAIN, 2, (0,255,0), 2)
+        cv2.putText(img, f'TorsoR: {int(torso_angle_right)}',(20, 220),
+            cv2.FONT_HERSHEY_PLAIN, 2, (0,255,255), 2)
+
         
-        if knee_angle_right < 60 and knee_angle_left < 60 and hip_angle_right < 60 and hip_angle_left < 60:
+        if knee_angle_right<60 and knee_angle_left<60 and hip_angle_right<60 and hip_angle_left<60:
             if self.squat_dir == 0:  # going down
                 self.squat_dir = 1
         
@@ -155,6 +168,19 @@ class PoseDetector:
                 self.squat_dir = 0
                 self.speak(f"Squat rep {self.squat_count}")
         
+        warning = ""
+        if hip_angle_right > 70 or hip_angle_left > 70:
+            warning += "Go deeper. "
+        if torso_angle_right > 130 or torso_angle_left > 130:
+            warning += "Keep your back straight. "
+        if not right_knee_ok or not left_knee_ok:
+            warning += "Knees behind toes."
+
+        if warning:
+            cv2.putText(img, warning.strip(), (20, 250),
+                    cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 2)
+        cv2.rectangle(img,(10,10),(310,60),(255,255,255),-1)
+
         cv2.putText(img, f'Squats: {self.squat_count}', (20, 50),
                 cv2.FONT_HERSHEY_PLAIN, 3, (255, 0, 0), 3)
         return img
