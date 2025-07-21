@@ -116,70 +116,45 @@ class PoseDetector:
             if self.dir_left==0:
                 self.dir_left=1
         return img
-    
+
     def countSquats(self, img, lmList):
-        if not lmList or len(lmList) <33:
+        if not lmList or len(lmList) < 33:
             return img
+        right_shoulder = lmList[12]
+        right_hip = lmList[24]
+        right_knee = lmList[26]
+        right_ankle = lmList[28]
 
-    # Right leg landmarks
-        right_hip=lmList[24]
-        right_knee=lmList[26]
-        right_ankle=lmList[28]
-        right_foot=lmList[32]  
+        left_shoulder = lmList[11]
+        left_hip = lmList[23]
+        left_knee = lmList[25]
+        left_ankle = lmList[27]
 
-    # Left leg landmarks
-        left_hip=lmList[23]
-        left_knee=lmList[25]
-        left_ankle=lmList[27]
-        left_foot=lmList[31] 
+        knee_angle_right = self.findAngle(img, right_hip, right_knee, right_ankle)
+        knee_angle_left = self.findAngle(img, left_hip, left_knee, left_ankle)
 
-    # Torso angles
-        torso_angle_right=self.findAngle(img,lmList[12],right_hip,right_knee,draw=False)
-        torso_angle_left=self.findAngle(img,lmList[11],left_hip,left_knee,draw=False)
+        hip_angle_right = self.findAngle(img, right_shoulder, right_hip, right_knee)
+        hip_angle_left = self.findAngle(img, left_shoulder, left_hip, left_knee)
 
-    # Knee angles
-        knee_angle_right=self.findAngle(img,right_hip,right_knee,right_ankle)
-        knee_angle_left=self.findAngle(img,left_hip,left_knee,left_ankle)
-
-    # Toe crossing check
-        right_knee_x,right_toe_x=right_knee[1],right_foot[1]
-        left_knee_x,left_toe_x=left_knee[1],left_foot[1]
-        right_knee_ok=right_knee_x<right_toe_x
-        left_knee_ok=left_knee_x<left_toe_x
-
-    # Form validation
-        form_ok =(
-            80 <= knee_angle_right <= 100 and
-            80 <= knee_angle_left <= 100 and
-            torso_angle_right < 120 and
-            torso_angle_left < 120 and
-            right_knee_ok and left_knee_ok
-        )
-        if form_ok:
-            # Squat direction logic
-            if knee_angle_right<120 and knee_angle_left<120:
-                if self.squat_dir == 0:
-                    self.squat_dir = 1
-            elif knee_angle_right>150 and knee_angle_left>150:
-                if self.squat_dir == 1:
-                    self.squat_count += 1
-                    self.squat_dir = 0
-                    self.speak(f"Squat rep {self.squat_count}")
-        else:
-            warning = "Fix Form:"
-            if not(80<= knee_angle_right<=130 and 80<=knee_angle_left<=130):
-                warning+="Bend knees 90°"
-            if torso_angle_right>=130 or torso_angle_left>=130:
-                warning+="Lean back"
-            if not (right_knee_ok and left_knee_ok):
-                warning +="Knees behind toes"
-
-            cv2.putText(img, warning.strip(),(20, 170),
-                    cv2.FONT_HERSHEY_PLAIN,3,(0, 0, 255),3)
-        cv2.putText(img,f'Squats:{self.squat_count}',(20,50),
-                        cv2.FONT_HERSHEY_PLAIN,3,(255,0,0),3)
-
+        cv2.putText(img, f'KneeR: {int(knee_angle_right)}', (20, 100),
+                cv2.FONT_HERSHEY_PLAIN, 2, (0,255,0), 2)
+        cv2.putText(img, f'KneeL: {int(knee_angle_left)}', (20, 130),
+                cv2.FONT_HERSHEY_PLAIN, 2, (0,255,0), 2)
+        cv2.putText(img, f'HipR: {int(hip_angle_right)}', (20, 160),
+                cv2.FONT_HERSHEY_PLAIN, 2, (0,255,0), 2)
+        cv2.putText(img, f'HipL: {int(hip_angle_left)}', (20, 190),
+                cv2.FONT_HERSHEY_PLAIN, 2, (0,255,0), 2)
+        
+        if knee_angle_right < 60 and knee_angle_left < 60 and hip_angle_right < 60 and hip_angle_left < 60:
+            if self.squat_dir == 0:  # going down
+                self.squat_dir = 1
+        
+        elif knee_angle_right > 150 and knee_angle_left > 150 and hip_angle_right > 150 and hip_angle_left > 150:
+            if self.squat_dir == 1:  # coming up
+                self.squat_count += 1
+                self.squat_dir = 0
+                self.speak(f"Squat rep {self.squat_count}")
+        
+        cv2.putText(img, f'Squats: {self.squat_count}', (20, 50),
+                cv2.FONT_HERSHEY_PLAIN, 3, (255, 0, 0), 3)
         return img
-
-
-
