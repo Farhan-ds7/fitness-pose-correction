@@ -26,7 +26,10 @@ class PoseDetector:
 
         self.squat_count=0
         self.squat_dir=0
-        
+
+        self.pushup_counter=0
+        self.pushup_dir=0
+
     def speak(self,text):
         engine.say(text)
         engine.runAndWait()
@@ -183,4 +186,42 @@ class PoseDetector:
 
         cv2.putText(img, f'Squats: {self.squat_count}', (20, 50),
                 cv2.FONT_HERSHEY_PLAIN, 3, (255, 0, 0), 3)
+        return img
+    
+    def countPushups(self,img,lmList):
+        if not lmList or len(lmList)<33:
+            return img
+        
+        left_shoulder=lmList[11]
+        left_elbow=lmList[13]
+        left_wrist=lmList[15]
+        left_ankle=lmList[27]
+
+        right_shoulder=lmList[12]
+        right_elbow=lmList[14]
+        right_wrist=lmList[16]
+        right_ankle=lmList[28]
+
+        left_hip=lmList[23]
+        right_hip=lmList[24]
+
+        angle_left=self.findAngle(img,left_shoulder,left_elbow,left_wrist)
+        angle_right=self.findAngle(img,right_shoulder,right_elbow,right_wrist)
+
+        torso_angle_left=self.findAngle(img,left_shoulder,left_hip,left_ankle,draw=False)
+        torso_angle_right=self.findAngle(img,right_shoulder,right_hip,right_ankle,draw=False)
+
+        cv2.putText(img,f"L-Elbow:{int(angle_left)}",(20,100),cv2.FONT_HERSHEY_PLAIN,3,(0,255,0),3)
+        cv2.putText(img,f"R-Elbow:{int(angle_right)}",(20,130),cv2.FONT_HERSHEY_PLAIN,3,(0,255,0),3)
+        
+        if angle_left<90 and angle_right<90:
+            if self.pushup_dir==0:
+                self.pushup_dir=1
+        elif angle_left>160 and angle_right>160:
+            if self.pushup_dir==1:
+                self.pushup_counter+=1
+                self.pushup_dir=0
+                self.speak(f"push-up rep {self.pushup_counter}")
+        cv2.putText(img,f"push-up rep {self.pushup_counter}",(20,50),cv2.FONT_HERSHEY_PLAIN,3,(255,0,0),3)
+
         return img
