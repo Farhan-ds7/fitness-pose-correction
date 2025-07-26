@@ -14,7 +14,7 @@ engine.setProperty('rate',150)
 engine.setProperty('volume',1.0)
 
 class PoseDetector:
-    def __init__(self,min_detection_confidence=0.7,min_tracking_confidence=0.6):
+    def __init__(self):
         self.mpDraw=mp.solutions.drawing_utils
         self.mpPose=mp.solutions.pose
         self.pose=self.mpPose.Pose()
@@ -52,6 +52,9 @@ class PoseDetector:
                 lmList.append((id,cx,cy))
         return lmList
     
+    def areallkeypointsvisible(self,img,p1,p2,p3,draw=True):
+        return all(id<len(lmList)for id in required_ids)
+    
     def findAngle(self,img,p1,p2,p3,draw=True):
         x1,y1=p1[1],p1[2]
         x2,y2=p2[1],p2[2]
@@ -73,6 +76,7 @@ class PoseDetector:
         return angle
     
     def countBicepCurls(self,img,lmList):
+        required_ids = [11,13,15,27,12,14,16,28,23,24]
         if not lmList or len(lmList)<25:
             return img
         
@@ -190,6 +194,7 @@ class PoseDetector:
     
     def countPushups(self,img,lmList):
         if not lmList or len(lmList)<33:
+            self.pushup_ready=False
             return img
         
         left_shoulder=lmList[11]
@@ -213,6 +218,14 @@ class PoseDetector:
 
         cv2.putText(img,f"L-Elbow:{int(angle_left)}",(20,100),cv2.FONT_HERSHEY_PLAIN,3,(0,255,0),3)
         cv2.putText(img,f"R-Elbow:{int(angle_right)}",(20,130),cv2.FONT_HERSHEY_PLAIN,3,(0,255,0),3)
+
+        if not self.pushup_ready:
+            if angle_left > 160 and angle_right > 160 and torso_angle_left > 160 and torso_angle_right > 160:
+                self.pushup_ready = True
+                self.speak("Push-up position detected. Start now.")
+            else:
+                cv2.putText(img, "Get into push-up position...", (20, 50), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 2)
+                return img  # Don't proceed until ready
         
         if angle_left<90 and angle_right<90:
             if self.pushup_dir==0:
